@@ -1,0 +1,52 @@
+% Load the audio signal
+load('nspeech1.mat');  % Loads nspeech1 into the workspace
+Fs = 8000;  % Assume a sampling frequency (if unspecified in nspeech1.mat)
+sound(nspeech1, Fs);  % Play the original audio signal
+
+% Plot 101 samples of the original signal for time indices 100 to 200
+figure;
+plot(100:200, nspeech1(100:200));
+xlabel('Sample index');
+ylabel('Amplitude');
+title('Time Domain Plot of Original Signal (Samples 100:200)');
+
+% Compute the DTFT of 1001 samples of the original signal for time indices 100 to 1100
+[X, w] = DTFT(nspeech1(100:1100), 1001);  % DTFT calculation
+figure;
+plot(w, abs(X));
+xlabel('\omega');
+ylabel('|X(e^{j\omega})|');
+title('Magnitude of DTFT for Original Signal (Samples 100:1100)');
+xlim([-pi, pi]);
+
+% Find the frequency of the interference peak
+[Xmax, Imax] = max(abs(X));  % Find the peak in the DTFT
+omega_interference = w(Imax);  % Frequency corresponding to the interference
+theta = abs(omega_interference);  % Theta for filter design
+
+% Define the FIR filter function with theta
+function y_filtered = FIRfilter(x, theta)
+    % Coefficients based on Hf(z) = 1 - 2*cos(theta)*z^(-1) + z^(-2)
+    b = [1, -2*cos(theta), 1];  % Filter coefficients for H_f(z)
+    y_filtered = conv(x, b, 'same');  % Apply the FIR filter using convolution
+end
+
+% Apply the FIR filter with the measured theta
+filtered_signal = FIRfilter(nspeech1, theta);
+sound(filtered_signal, Fs);  % Play the filtered audio signal
+
+% Plot 101 samples of the filtered signal for time indices 100 to 200
+figure;
+plot(100:200, filtered_signal(100:200));
+xlabel('Sample index');
+ylabel('Amplitude');
+title('Time Domain Plot of Filtered Signal (Samples 100:200)');
+
+% Compute and plot the DTFT of 1001 samples of the filtered signal
+[X_filtered, w] = DTFT(filtered_signal(100:1100), 1001);
+figure;
+plot(w, abs(X_filtered));
+xlabel('\omega');
+ylabel('|X_{filtered}(e^{j\omega})|');
+title('Magnitude of DTFT for Filtered Signal (Samples 100:1100)');
+xlim([-pi, pi]);

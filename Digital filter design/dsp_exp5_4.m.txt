@@ -1,0 +1,79 @@
+% Load the signal
+load pcm;
+
+% Play the pcm signal
+sound(pcm, 8000);
+
+% Plot 101 samples of pcm for indices (100:200)
+figure;
+plot(100:200, pcm(100:200));
+title('101 Samples of pcm Signal (100:200)');
+xlabel('Sample Index');
+ylabel('Amplitude');
+
+% Calculate theta for the center frequency
+fc = 3146;        % Center frequency in Hz
+fs = 8000;        % Sampling frequency in Hz
+theta = 2 * pi * (fc / fs);
+
+% Calculate DTFT for 1001 samples (indices 100 to 1100)
+M = 1001;
+[X, w] = DTFT(pcm(100:1100), M);
+
+% Plot magnitude of DTFT for |ω| < π
+figure;
+plot(w, abs(X));
+title('Magnitude of DTFT of pcm Signal');
+xlabel('\omega (rad/sample)');
+ylabel('|X(e^{j\omega})|');
+xlim([-pi pi]);
+
+% Plot DTFT magnitude around ω = θ in range [θ - 0.02, θ + 0.02]
+figure;
+idx = (w >= theta - 0.02) & (w <= theta + 0.02);
+plot(w(idx), abs(X(idx)));
+title(['Magnitude of DTFT of pcm around \theta = ', num2str(theta)]);
+xlabel('\omega (rad/sample)');
+ylabel('|X(e^{j\omega})|');
+
+% Define IIRfilter function
+function y = IIRfilter(x)
+    r = 0.995;
+    theta = 2 * pi * (3146 / 8000);  % Recompute theta in function
+    y = zeros(size(x));
+    for n = 3:length(x)
+        y(n) = 2 * r * cos(theta) * y(n-1) - r^2 * y(n-2) + (1 - r) * x(n);
+    end
+end
+
+% Apply IIRfilter to pcm signal
+filtered_pcm = IIRfilter(pcm);
+
+% Play filtered pcm signal
+sound(filtered_pcm, 8000);
+
+% Plot 101 samples of filtered_pcm for indices (100:200)
+figure;
+plot(100:200, filtered_pcm(100:200));
+title('101 Samples of Filtered pcm Signal (100:200)');
+xlabel('Sample Index');
+ylabel('Amplitude');
+
+% Compute DTFT for 1001 samples of filtered signal (indices 100 to 1100)
+[X_filtered, w_filtered] = DTFT(filtered_pcm(100:1100), M);
+
+% Plot magnitude of DTFT of filtered_pcm for |ω| < π
+figure;
+plot(w_filtered, abs(X_filtered));
+title('Magnitude of DTFT of Filtered pcm Signal');
+xlabel('\omega (rad/sample)');
+ylabel('|X(e^{j\omega})|');
+xlim([-pi pi]);
+
+% Plot DTFT magnitude of filtered_pcm around ω = θ in range [θ - 0.02, θ + 0.02]
+figure;
+idx_filtered = (w_filtered >= theta - 0.02) & (w_filtered <= theta + 0.02);
+plot(w_filtered(idx_filtered), abs(X_filtered(idx_filtered)));
+title(['Magnitude of DTFT of Filtered pcm around \theta = ', num2str(theta)]);
+xlabel('\omega (rad/sample)');
+ylabel('|X(e^{j\omega})|');

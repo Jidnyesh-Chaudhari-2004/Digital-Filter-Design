@@ -1,0 +1,75 @@
+% Load the noisy speech signal
+load('nspeech2.mat');  % Load 'nspeech2' and sampling frequency 'Fs'
+
+% Define the cutoff frequency for the low-pass filter
+wc = 2.0;
+
+% Define the truncated low-pass filter function
+function h = LPFtrunc(N, wc)
+    M = (N - 1) / 2;
+    n = 0:(N - 1);
+    h = (wc / pi) * sinc(wc / pi * (n - M));  % Shifted sinc function for causality
+end
+
+% Compute DTFT for each filter size
+function [H, w] = DTFT(h, num_points)
+    w = linspace(-pi, pi, num_points);  % Frequency axis
+    H = freqz(h, 1, w);  % DTFT using freqz for FIR filter
+end
+
+% Define filter sizes
+N1 = 21;
+N2 = 101;
+
+% Generate filters with cutoff frequency wc
+h21 = LPFtrunc(N1, wc);
+h101 = LPFtrunc(N2, wc);
+
+% Compute DTFTs
+[H21, w] = DTFT(h21, 512);
+[H101, ~] = DTFT(h101, 512);
+
+% Plot magnitude responses in linear scale
+figure;
+plot(w, abs(H21));
+title('Magnitude Response for N = 21');
+xlabel('\omega'); ylabel('|H(e^{j\omega})|');
+grid on;
+
+figure;
+plot(w, abs(H101));
+title('Magnitude Response for N = 101');
+xlabel('\omega'); ylabel('|H(e^{j\omega})|');
+grid on;
+
+% Plot magnitude responses in dB
+figure;
+plot(w, 20*log10(abs(H21)));
+title('Magnitude Response in dB for N = 21');
+xlabel('\omega'); ylabel('|H(e^{j\omega})| (dB)');
+grid on;
+
+figure;
+plot(w, 20*log10(abs(H101)));
+title('Magnitude Response in dB for N = 101');
+xlabel('\omega'); ylabel('|H(e^{j\omega})| (dB)');
+grid on;
+
+% Filter the noisy speech signal using convolution
+filtered_nspeech21 = 3 * conv(nspeech2, h21, 'same'); 
+filtered_nspeech101 = 3 * conv(nspeech2, h101, 'same');
+
+% Play the original and filtered signals
+disp('Playing original signal...');
+sound(nspeech2, Fs);
+pause(3);
+
+disp('Playing filtered signal with N = 21...');
+sound(filtered_nspeech21, Fs);
+pause(3);
+
+disp('Playing filtered signal with N = 101...');
+sound(filtered_nspeech101, Fs);
+
+
+
